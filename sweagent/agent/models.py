@@ -770,11 +770,16 @@ class LiteLLMModel(AbstractModel):
             ):
                 output_dict["thinking_blocks"] = response.choices[i].message.thinking_blocks  # type: ignore
             # Support Kimi K2.5 reasoning_content (thinking mode)
-            if (
-                hasattr(response.choices[i].message, "reasoning_content")  # type: ignore
-                and response.choices[i].message.reasoning_content  # type: ignore
-            ):
-                output_dict["reasoning_content"] = response.choices[i].message.reasoning_content  # type: ignore
+            # Check both direct attribute and provider_specific_fields (LiteLLM may put it in either)
+            reasoning_content = None
+            if hasattr(response.choices[i].message, "reasoning_content"):  # type: ignore
+                reasoning_content = response.choices[i].message.reasoning_content  # type: ignore
+            if not reasoning_content:
+                provider_specific = getattr(response.choices[i].message, "provider_specific_fields", None)  # type: ignore
+                if provider_specific and isinstance(provider_specific, dict):
+                    reasoning_content = provider_specific.get("reasoning_content")
+            if reasoning_content:
+                output_dict["reasoning_content"] = reasoning_content
             outputs.append(output_dict)
         self._update_stats(input_tokens=input_tokens, output_tokens=output_tokens, cost=cost)
         return outputs
