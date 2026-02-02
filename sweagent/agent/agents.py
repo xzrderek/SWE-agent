@@ -7,6 +7,7 @@ import logging
 import time
 from pathlib import Path, PurePosixPath
 from typing import Annotated, Any, Literal
+import re
 
 import yaml
 from jinja2 import Template
@@ -698,9 +699,9 @@ class DefaultAgent(AbstractAgent):
 
         # We disable syntax highlighting here, because some inputs can lead to a complete cross-thread
         # freeze in the agent. See https://github.com/SWE-agent/SWE-agent/issues/901 .
-        safe_message = message.replace('\u200b', '')
+        safe_message = re.sub(r'[\u200b\u200c\u200d\ufeff]', '', message)  # Strip zero-width chars
         self.logger.info(f"🤖 MODEL INPUT\n{safe_message}", extra={"highlighter": None})
-        
+
         history_item: dict[str, Any] = {
             "role": "user",
             "content": message,
