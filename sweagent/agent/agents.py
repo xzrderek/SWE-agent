@@ -698,7 +698,9 @@ class DefaultAgent(AbstractAgent):
 
         # We disable syntax highlighting here, because some inputs can lead to a complete cross-thread
         # freeze in the agent. See https://github.com/SWE-agent/SWE-agent/issues/901 .
-        self.logger.info(f"🤖 MODEL INPUT\n{message}", extra={"highlighter": None})
+        safe_message = message.replace('\u200b', '')
+        self.logger.info(f"🤖 MODEL INPUT\n{safe_message}", extra={"highlighter": None})
+        
         history_item: dict[str, Any] = {
             "role": "user",
             "content": message,
